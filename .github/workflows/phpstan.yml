@@ -1,0 +1,36 @@
+name: Static Analysis
+
+on:
+  push:
+    paths:
+      - '**.php'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpstan.neon.dist'
+
+jobs:
+  phpstan:
+    name: phpstan ${{ matrix.php }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ ubuntu-latest ]
+        php: [ 8.4 ]
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install composer dependencies
+        uses: ramsey/composer-install@v4
+
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan --error-format=github
