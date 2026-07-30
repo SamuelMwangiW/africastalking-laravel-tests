@@ -15,6 +15,7 @@ it('sends a bulk sms with default fake responses', function (): void {
         ->and($response->recipients)->toHaveCount(1);
 
     Africastalking::fake()->assertSmsSentTo('+254700111222');
+    Africastalking::fake()->assertSmsSentFrom('AFRICASTKNG');
     Africastalking::fake()->assertSmsContains('Hello there');
     Africastalking::fake()->assertSmsCount(1);
     Africastalking::fake()->assertBulkSmsSent();
@@ -28,6 +29,15 @@ it('sends a premium sms', function (): void {
 
 it('asserts no sms was sent', function (): void {
     Africastalking::fake()->assertNoSmsSent();
+    Africastalking::fake()->assertNothingSent();
+});
+
+it('scopes assertNothingSent to sms only', function (): void {
+    Africastalking::fake();
+
+    Africastalking::app()->balance();
+
+    Africastalking::fake()->assertNothingSent();
 });
 
 it('makes every sms fail', function (): void {

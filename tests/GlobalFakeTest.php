@@ -13,16 +13,16 @@ it('returns a FakeAfricastalking instance and reuses it across calls', function 
         ->and(Africastalking::fake())->toBe($fake);
 });
 
-it('asserts nothing was sent', function (): void {
-    Africastalking::fake()->assertNothingSent();
+it('asserts nothing was dispatched', function (): void {
+    Africastalking::fake()->assertNothingDispatched();
 });
 
-it('fails assertNothingSent once a request has been sent', function (): void {
+it('fails assertNothingDispatched once a request has been sent', function (): void {
     Africastalking::fake();
 
     Africastalking::app()->balance();
 
-    Africastalking::fake()->assertNothingSent();
+    Africastalking::fake()->assertNothingDispatched();
 })->throws(PHPUnit\Framework\ExpectationFailedException::class);
 
 it('asserts a global sent count', function (): void {

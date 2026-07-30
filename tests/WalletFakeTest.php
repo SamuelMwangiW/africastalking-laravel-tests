@@ -30,3 +30,12 @@ it('seeds the wallet balance response with an explicit currency', function (): v
     expect($balance->amount)->toBe(12.34)
         ->and($balance->currency->value)->toBe('USD');
 });
+
+it('seeds the wallet balance response via fakeWalletBalance', function (): void {
+    Africastalking::fake()->fakeWalletBalance(7500.25, 'UGX');
+
+    $balance = Africastalking::wallet()->balance();
+
+    expect($balance->amount)->toBe(7500.25)
+        ->and($balance->currency->value)->toBe('UGX');
+});
