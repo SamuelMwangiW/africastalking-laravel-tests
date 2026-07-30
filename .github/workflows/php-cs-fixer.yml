@@ -1,0 +1,20 @@
+name: Check Code styling
+
+on: [push]
+
+permissions:
+  contents: write
+
+jobs:
+  pint-fixer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+      - name: "laravel-pint"
+        uses: aglipanci/laravel-pint-action@2.6
+        with:
+          testMode: true
