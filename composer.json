@@ -2,7 +2,7 @@
     "name": "samuelmwangiw/africastalking-laravel-tests",
     "description": "Testing helpers for samuelmwangiw/africastalking-laravel: fake the Africa's Talking API and assert against Voice, SMS, Airtime, Mobile Data, SIM Swap, Payment, Stash, Wallet and Application calls.",
     "keywords": [
-        "SamuelMwangiW",
+        "dev",
         "laravel",
         "africastalking-laravel",
         "africastalking-laravel-tests",
