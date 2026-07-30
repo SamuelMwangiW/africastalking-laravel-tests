@@ -15,11 +15,22 @@ it('sends airtime with default fake responses', function (): void {
 
     Africastalking::fake()->assertAirtimeSentTo('+254700111222');
     Africastalking::fake()->assertAirtimeSentTo('+254700111222', 'KES 100');
+    Africastalking::fake()->assertSentAirtime('+254700111222', 100);
     Africastalking::fake()->assertAirtimeCount(1);
 });
 
 it('asserts no airtime was sent', function (): void {
     Africastalking::fake()->assertNoAirtimeSent();
+    Africastalking::fake()->assertAirtimeNotSent();
+});
+
+it('asserts airtime was sent with an idempotency key', function (): void {
+    Africastalking::airtime()
+        ->idempotent('idem-key-123')
+        ->to('+254700111222', 'KES', 100)
+        ->send();
+
+    Africastalking::fake()->assertSentAirtimeIdempotently('idem-key-123');
 });
 
 it('counts every recipient across multiple recipients in one send', function (): void {

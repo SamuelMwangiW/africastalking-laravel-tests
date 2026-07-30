@@ -19,14 +19,18 @@ it('places a voice call with default fake responses', function (): void {
 
 it('asserts no voice calls were placed', function (): void {
     Africastalking::fake()->assertNoVoiceCallsPlaced();
+    Africastalking::fake()->assertNothingCalled();
 });
 
 it('asserts a call was placed to and from specific numbers', function (): void {
     Africastalking::voice()->call('+254700111222')->as('+254711000000')->requestId('req-123')->say('Hi')->send();
 
     Africastalking::fake()->assertVoiceCallPlacedTo('+254700111222');
+    Africastalking::fake()->assertCallMadeTo('+254700111222');
     Africastalking::fake()->assertVoiceCallPlacedFrom('+254711000000');
+    Africastalking::fake()->assertCallMadeFrom('+254711000000');
     Africastalking::fake()->assertVoiceCallHadClientRequestId('req-123');
+    Africastalking::fake()->assertCallRequestId('req-123');
 });
 
 it('asserts a call matched a callback', function (): void {
@@ -63,6 +67,19 @@ it('makes every voice call fail', function (): void {
 
     expect($response->errorMessage)->toBe('InsufficientBalance')
         ->and($response->recipients->first()['status'])->toBe('InvalidPhoneNumber');
+});
+
+it('reverts back to succeeding after a prior failure', function (): void {
+    Africastalking::fake()->failVoiceCalls();
+
+    $failed = Africastalking::voice()->call('+254700111222')->say('Hi')->send();
+
+    Africastalking::fake()->succeedVoiceCalls();
+
+    $succeeded = Africastalking::voice()->call('+254700111222')->say('Hi')->send();
+
+    expect($failed->errorMessage)->toBe('InsufficientBalance')
+        ->and($succeeded->errorMessage)->toBe('None');
 });
 
 it('makes voice calls fail only for specific numbers', function (): void {

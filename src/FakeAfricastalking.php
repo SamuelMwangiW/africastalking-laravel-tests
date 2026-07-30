@@ -103,7 +103,7 @@ class FakeAfricastalking
     // Global
     // ------------------------------------------------------------------
 
-    public function assertNothingSent(): void
+    public function assertNothingDispatched(): void
     {
         $this->mockClient->assertNothingSent();
     }
@@ -151,6 +151,14 @@ class FakeAfricastalking
         return $this;
     }
 
+    public function succeedVoiceCalls(): static
+    {
+        $this->allVoiceCallsFail = false;
+        $this->failingVoiceNumbers = [];
+
+        return $this;
+    }
+
     public function withQueueStatus(array $entries): static
     {
         $this->queueStatusDefaultEntries = $entries;
@@ -171,6 +179,11 @@ class FakeAfricastalking
     }
 
     public function assertNoVoiceCallsPlaced(): void
+    {
+        $this->assertVoiceCallCount(0);
+    }
+
+    public function assertNothingCalled(): void
     {
         $this->assertVoiceCallCount(0);
     }
@@ -198,6 +211,11 @@ class FakeAfricastalking
         PHPUnit::assertTrue($matched, "No voice call was placed to [{$phoneNumber}].");
     }
 
+    public function assertCallMadeTo(string $phone): void
+    {
+        $this->assertVoiceCallPlacedTo($phone);
+    }
+
     public function assertVoiceCallPlacedFrom(string $callerId): void
     {
         $matched = $this->bodiesOf(CallRequest::class)->contains(
@@ -207,6 +225,11 @@ class FakeAfricastalking
         PHPUnit::assertTrue($matched, "No voice call was placed from [{$callerId}].");
     }
 
+    public function assertCallMadeFrom(string $phone): void
+    {
+        $this->assertVoiceCallPlacedFrom($phone);
+    }
+
     public function assertVoiceCallHadClientRequestId(string $id): void
     {
         $matched = $this->bodiesOf(CallRequest::class)->contains(
@@ -214,6 +237,16 @@ class FakeAfricastalking
         );
 
         PHPUnit::assertTrue($matched, "No voice call had the client request id [{$id}].");
+    }
+
+    /**
+     * Voice calls do not carry an Idempotency-Key (the main package's
+     * VoiceCall does not use HasIdempotency); this asserts the closest
+     * equivalent the SDK exposes, the call's clientRequestId.
+     */
+    public function assertCallRequestId(string $id): void
+    {
+        $this->assertVoiceCallHadClientRequestId($id);
     }
 
     public function assertVoiceCallHadActions(array $actionTypes): void
@@ -314,6 +347,15 @@ class FakeAfricastalking
         PHPUnit::assertTrue($matched, "No SMS was sent to [{$phoneNumber}].");
     }
 
+    public function assertSmsSentFrom(string $sender): void
+    {
+        $matched = $this->bodiesOf(BulkSmsRequest::class, PremiumSmsRequest::class)->contains(
+            static fn(array $body) => Arr::get($body, 'from') === $sender,
+        );
+
+        PHPUnit::assertTrue($matched, "No SMS was sent from [{$sender}].");
+    }
+
     public function assertSmsContains(string $text): void
     {
         $matched = $this->bodiesOf(BulkSmsRequest::class, PremiumSmsRequest::class)->contains(
@@ -329,6 +371,14 @@ class FakeAfricastalking
     }
 
     public function assertNoSmsSent(): void
+    {
+        $this->assertSmsCount(0);
+    }
+
+    /**
+     * Scoped to SMS. For the cross-service assertion, see assertNothingDispatched().
+     */
+    public function assertNothingSent(): void
     {
         $this->assertSmsCount(0);
     }
@@ -376,6 +426,24 @@ class FakeAfricastalking
         PHPUnit::assertTrue($matched, "No airtime was sent to [{$phoneNumber}].");
     }
 
+    /**
+     * Like assertAirtimeSentTo(), but requires an exact whole-unit amount match.
+     */
+    public function assertSentAirtime(string $phone, int $amount): void
+    {
+        $matched = $this->bodiesOf(AirtimeSendRequest::class)->contains(
+            fn(array $body) => collect((array) Arr::get($body, 'recipients', []))->contains(function (array $recipient) use ($phone, $amount) {
+                if (self::normalizePhone((string) Arr::get($recipient, 'phoneNumber', '')) !== self::normalizePhone($phone)) {
+                    return false;
+                }
+
+                return $amount === self::amountValue((string) Arr::get($recipient, 'amount', ''));
+            }),
+        );
+
+        PHPUnit::assertTrue($matched, "No airtime of [{$amount}] was sent to [{$phone}].");
+    }
+
     public function assertAirtimeCount(int $count): void
     {
         $actual = $this->bodiesOf(AirtimeSendRequest::class)->sum(
@@ -388,6 +456,20 @@ class FakeAfricastalking
     public function assertNoAirtimeSent(): void
     {
         $this->assertAirtimeCount(0);
+    }
+
+    public function assertAirtimeNotSent(): void
+    {
+        $this->assertAirtimeCount(0);
+    }
+
+    public function assertSentAirtimeIdempotently(string $key): void
+    {
+        $matched = $this->headersOf(AirtimeSendRequest::class)->contains(
+            static fn(array $headers) => Arr::get($headers, 'Idempotency-Key') === $key,
+        );
+
+        PHPUnit::assertTrue($matched, "No airtime request was sent with the idempotency key [{$key}].");
     }
 
     // ------------------------------------------------------------------
@@ -497,6 +579,13 @@ class FakeAfricastalking
         return $this;
     }
 
+    public function fakeWalletBalance(float $balance, string $currency = 'KES'): static
+    {
+        $this->walletBalance = "{$currency} {$balance}";
+
+        return $this;
+    }
+
     // ------------------------------------------------------------------
     // Application
     // ------------------------------------------------------------------
@@ -532,6 +621,11 @@ class FakeAfricastalking
     private static function withCurrencyPrefix(string $amount): string
     {
         return preg_match('/^[A-Z]{3}\s/', $amount) ? $amount : "KES {$amount}";
+    }
+
+    private static function amountValue(string $amount): int
+    {
+        return (int) preg_replace('/[^0-9.]/', '', $amount);
     }
 
     private static function isOrderedSubsequence(array $needle, array $haystack): bool
@@ -835,6 +929,15 @@ class FakeAfricastalking
     private function countOf(string ...$requestClasses): int
     {
         return $this->requestsOf(...$requestClasses)->count();
+    }
+
+    /**
+     * @return Collection<int,array<string,mixed>>
+     */
+    private function headersOf(string ...$requestClasses): Collection
+    {
+        return $this->requestsOf(...$requestClasses)
+            ->map(static fn(Response $response) => $response->getPendingRequest()->headers()->all());
     }
 
     /**

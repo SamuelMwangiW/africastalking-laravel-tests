@@ -41,7 +41,7 @@ it('sends a welcome sms', function () {
 | Method | Description |
 |---|---|
 | `Africastalking::fake(): FakeAfricastalking` | Base entry point; intercepts every Saloon request across all domains |
-| `assertNothingSent(): void` | Asserts nothing was sent to Africa's Talking, across any service |
+| `assertNothingDispatched(): void` | Asserts nothing was sent to Africa's Talking, across any service |
 | `assertSentCount(int $count, ?string $service = null)` | Generic count assertion, optionally scoped to one service (`voice`, `sms`, `airtime`, `data`, `simswap`, `stash`, `wallet`, `application`, `payment`) |
 | `recorded(string $service): Collection` | Escape hatch returning the raw recorded `Saloon\Http\Response` objects for a service |
 
@@ -51,12 +51,13 @@ it('sends a welcome sms', function () {
 |---|---|
 | `fake()->failVoiceCalls()` | Makes every subsequent voice call fail |
 | `fake()->failVoiceCallsFor(array $phoneNumbers)` | Makes voice calls fail only for the given phone numbers |
+| `fake()->succeedVoiceCalls()` | Reverts a prior `failVoiceCalls()`/`failVoiceCallsFor()`, making subsequent calls succeed again |
 | `assertVoiceCallCount(int $count)` | Asserts exactly N voice calls were placed |
-| `assertNoVoiceCallsPlaced()` | Asserts no voice call was placed |
+| `assertNoVoiceCallsPlaced()` / `assertNothingCalled()` | Asserts no voice call was placed |
 | `assertVoiceCallPlaced(?Closure $callback = null)` | Asserts a call was placed, optionally matching a closure over the request body |
-| `assertVoiceCallPlacedTo(string $phoneNumber)` | Asserts a call was placed to a specific number |
-| `assertVoiceCallPlacedFrom(string $callerId)` | Asserts a call was placed from a specific caller ID |
-| `assertVoiceCallHadClientRequestId(string $id)` | Asserts a placed call carried the given `clientRequestId` |
+| `assertVoiceCallPlacedTo(string $phoneNumber)` / `assertCallMadeTo(string $phone)` | Asserts a call was placed to a specific number |
+| `assertVoiceCallPlacedFrom(string $callerId)` / `assertCallMadeFrom(string $phone)` | Asserts a call was placed from a specific caller ID |
+| `assertVoiceCallHadClientRequestId(string $id)` / `assertCallRequestId(string $id)` | Asserts a placed call carried the given `clientRequestId` (voice calls have no idempotency key in the main package — this is the closest equivalent) |
 | `assertVoiceCallHadActions(array $actionTypes)` | Asserts a placed call's `callActions` included the given action types, in order |
 | `assertVoiceCallSaid(string $message)` | Asserts a placed call included a `say` action with the given exact message |
 | `assertVoiceCallPlayed(string $url)` | Asserts a placed call included a `play` action with the given URL |
@@ -73,9 +74,10 @@ it('sends a welcome sms', function () {
 | `fake()->failSms()` | Makes every subsequent SMS send fail |
 | `fake()->failSmsTo(array $phoneNumbers)` | Makes SMS sends fail only for the given phone numbers |
 | `assertSmsSentTo(string $phoneNumber)` | Asserts an SMS was sent to a specific number |
+| `assertSmsSentFrom(string $sender)` | Asserts the sender ID (`from`) was set correctly |
 | `assertSmsContains(string $text)` | Asserts a sent SMS's body contains the given text |
 | `assertSmsCount(int $count)` | Asserts exactly N SMS messages were sent |
-| `assertNoSmsSent()` | Asserts no SMS was sent |
+| `assertNoSmsSent()` / `assertNothingSent()` | Asserts no SMS was sent. `assertNothingSent()` is scoped to SMS only — for the cross-service assertion, use the global `assertNothingDispatched()` |
 | `assertBulkSmsSent()` | Asserts a bulk-mode SMS was sent |
 | `assertPremiumSmsSent()` | Asserts a premium-mode SMS was sent |
 
@@ -85,9 +87,11 @@ it('sends a welcome sms', function () {
 |---|---|
 | `fake()->failAirtime()` | Makes every subsequent airtime disbursement fail |
 | `fake()->failAirtimeFor(array $phoneNumbers)` | Makes airtime disbursement fail only for the given phone numbers |
-| `assertAirtimeSentTo(string $phoneNumber, ?string $amount = null)` | Asserts airtime was sent to a number, optionally checking the amount |
+| `assertAirtimeSentTo(string $phoneNumber, ?string $amount = null)` | Asserts airtime was sent to a number, optionally checking the amount (substring match) |
+| `assertSentAirtime(string $phone, int $amount)` | Asserts airtime was sent to a number for an exact whole-unit amount |
 | `assertAirtimeCount(int $count)` | Asserts exactly N airtime disbursements were sent |
-| `assertNoAirtimeSent()` | Asserts no airtime was sent |
+| `assertNoAirtimeSent()` / `assertAirtimeNotSent()` | Asserts no airtime was sent |
+| `assertSentAirtimeIdempotently(string $key)` | Asserts an airtime request carried the given `Idempotency-Key` header |
 
 ## Mobile Data
 
@@ -122,6 +126,7 @@ it('sends a welcome sms', function () {
 | Method | Description |
 |---|---|
 | `fake()->withWalletBalance(string $amount)` | Seeds the wallet balance response |
+| `fake()->fakeWalletBalance(float $balance, string $currency = 'KES')` | Same as `withWalletBalance()`, but takes the amount and currency as separate arguments |
 
 ## Application
 
