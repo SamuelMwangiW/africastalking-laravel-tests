@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SamuelMwangiW\Africastalking\Testing;
 
+use BadMethodCallException;
 use SamuelMwangiW\Africastalking\Africastalking as BaseAfricastalking;
 
 /**
@@ -18,6 +19,36 @@ use SamuelMwangiW\Africastalking\Africastalking as BaseAfricastalking;
 class FakeableAfricastalking extends BaseAfricastalking
 {
     private ?FakeAfricastalking $fake = null;
+
+    /**
+     * Forwards read-only calls (assertions and recorded()) made directly
+     * on the facade — e.g. Africastalking::assertSmsSentTo(...) — to the
+     * active fake, so callers aren't required to write
+     * Africastalking::fake()->assertSmsSentTo(...) for every assertion.
+     *
+     * Seeding/failure-injection methods (fail*, with*, fakeWalletBalance)
+     * are intentionally not forwarded, to keep it visually obvious which
+     * calls change fake behavior versus which ones only observe it — those
+     * must go through Africastalking::fake()->....
+     */
+    public function __call(string $method, array $arguments): mixed
+    {
+        $isReadOnly = 'recorded' === $method || str_starts_with($method, 'assert');
+
+        if ( ! $isReadOnly) {
+            throw new BadMethodCallException(
+                "Call to undefined method Africastalking::{$method}(). Did you mean Africastalking::fake()->{$method}(...)?",
+            );
+        }
+
+        if (null === $this->fake) {
+            throw new BadMethodCallException(
+                "Call to undefined method Africastalking::{$method}(). Did you forget to call Africastalking::fake() first?",
+            );
+        }
+
+        return $this->fake->{$method}(...$arguments);
+    }
 
     public function fake(): FakeAfricastalking
     {
