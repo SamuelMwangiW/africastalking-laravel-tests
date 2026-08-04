@@ -48,7 +48,7 @@ it('asserts a call was transferred with a specific leg', function (): void {
     Africastalking::voice()
         ->transferCall('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
         ->to('+254700111222')
-        ->callLeg(CallLeg::CALLER)
+        ->leg(CallLeg::CALLER)
         ->send();
 
     Africastalking::fake()->assertCallTransferredWithLeg('caller');
