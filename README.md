@@ -36,6 +36,18 @@ it('sends a welcome sms', function () {
 
 `Africastalking::fake()` always returns the same instance within a test, so you can chain configuration and assertions across multiple calls.
 
+Once `Africastalking::fake()` has been called, every assertion and read-only method below (`assert*`, `recorded()`) can also be called directly on the facade, without `->fake()`:
+
+```php
+Africastalking::fake();
+
+Africastalking::sms('Welcome!')->to('+254700000000')->send();
+
+Africastalking::assertSmsSentTo('+254700000000');
+```
+
+Seeding and failure-injection methods (`fail*`, `with*`, `fakeWalletBalance`) are only reachable via `Africastalking::fake()->...` — calling them directly on the facade, to keep it visually obvious where a test is changing fake behavior versus asserting on it, throws a `BadMethodCallException`. Calling any assertion directly before `Africastalking::fake()` has run does too.
+
 ## Global
 
 | Method | Description |

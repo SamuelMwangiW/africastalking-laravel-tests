@@ -19,6 +19,8 @@ it('sends a bulk sms with default fake responses', function (): void {
     Africastalking::fake()->assertSmsContains('Hello there');
     Africastalking::fake()->assertSmsCount(1);
     Africastalking::fake()->assertBulkSmsSent();
+
+    Africastalking::assertSmsSentTo('+254700111222');
 });
 
 it('sends a premium sms', function (): void {

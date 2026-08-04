@@ -58,3 +58,33 @@ it('returns the raw recorded responses for a service', function (): void {
 
     expect($recorded)->toBeInstanceOf(Collection::class)->toHaveCount(1);
 });
+
+it('forwards assertions made directly on the facade to the active fake', function (): void {
+    Africastalking::fake();
+
+    Africastalking::app()->balance();
+    Africastalking::wallet()->balance();
+
+    Africastalking::assertSentCount(2);
+    Africastalking::assertSentCount(1, 'application');
+
+    $recorded = Africastalking::recorded('application');
+
+    expect($recorded)->toBeInstanceOf(Collection::class)->toHaveCount(1);
+});
+
+it('forwards assertNothingDispatched when called directly on the facade', function (): void {
+    Africastalking::fake();
+
+    Africastalking::assertNothingDispatched();
+});
+
+it('throws a clear error when a facade assertion is called before fake()', function (): void {
+    Africastalking::assertNothingDispatched();
+})->throws(BadMethodCallException::class, 'Did you forget to call Africastalking::fake() first?');
+
+it('does not forward seeding/failure methods called directly on the facade', function (): void {
+    Africastalking::fake();
+
+    Africastalking::failVoiceCalls();
+})->throws(BadMethodCallException::class, 'Did you mean Africastalking::fake()->failVoiceCalls(...)?');

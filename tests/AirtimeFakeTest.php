@@ -17,6 +17,8 @@ it('sends airtime with default fake responses', function (): void {
     Africastalking::fake()->assertAirtimeSentTo('+254700111222', 'KES 100');
     Africastalking::fake()->assertSentAirtime('+254700111222', 100);
     Africastalking::fake()->assertAirtimeCount(1);
+
+    Africastalking::assertSentAirtime('+254700111222', 100);
 });
 
 it('asserts no airtime was sent', function (): void {

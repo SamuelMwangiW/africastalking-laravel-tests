@@ -15,6 +15,8 @@ it('places a voice call with default fake responses', function (): void {
         ->and($response->recipients)->toHaveCount(1);
 
     Africastalking::fake()->assertVoiceCallCount(1);
+    Africastalking::assertVoiceCallCount(1);
+    Africastalking::assertCallMadeTo('+254700111222');
 });
 
 it('asserts no voice calls were placed', function (): void {
