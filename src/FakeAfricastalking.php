@@ -25,6 +25,7 @@ use SamuelMwangiW\Africastalking\Saloon\Requests\Payment\StashTopupRequest;
 use SamuelMwangiW\Africastalking\Saloon\Requests\Payment\WalletBalanceRequest;
 use SamuelMwangiW\Africastalking\Saloon\Requests\SimSwap\SendRequest as SimSwapSendRequest;
 use SamuelMwangiW\Africastalking\Saloon\Requests\Voice\CallRequest;
+use SamuelMwangiW\Africastalking\Saloon\Requests\Voice\CallTransferRequest;
 use SamuelMwangiW\Africastalking\Saloon\Requests\Voice\CapabilityTokenRequest;
 use SamuelMwangiW\Africastalking\Saloon\Requests\Voice\QueueStatusRequest;
 
@@ -38,7 +39,7 @@ use SamuelMwangiW\Africastalking\Saloon\Requests\Voice\QueueStatusRequest;
 class FakeAfricastalking
 {
     private const array SERVICE_REQUESTS = [
-        'voice' => [CallRequest::class, QueueStatusRequest::class],
+        'voice' => [CallRequest::class, QueueStatusRequest::class, CallTransferRequest::class],
         'sms' => [BulkSmsRequest::class, PremiumSmsRequest::class],
         'airtime' => [AirtimeSendRequest::class],
         'data' => [MobileDataSendRequest::class],
@@ -61,6 +62,11 @@ class FakeAfricastalking
 
     /** @var array<string,array> */
     private array $queueStatusEntriesByNumber = [];
+
+    private bool $allCallTransfersFail = false;
+
+    /** @var array<int,string> */
+    private array $failingCallTransferNumbers = [];
 
     private bool $allSmsFail = false;
 
@@ -318,6 +324,79 @@ class FakeAfricastalking
 
             PHPUnit::assertTrue($matched, "The queue status for [{$phoneNumber}] was never checked.");
         }
+    }
+
+    public function failCallTransfers(): static
+    {
+        $this->allCallTransfersFail = true;
+
+        return $this;
+    }
+
+    public function failCallTransfersTo(array $phoneNumbers): static
+    {
+        array_push($this->failingCallTransferNumbers, ...array_map(self::normalizePhone(...), $phoneNumbers));
+
+        return $this;
+    }
+
+    public function succeedCallTransfers(): static
+    {
+        $this->allCallTransfersFail = false;
+        $this->failingCallTransferNumbers = [];
+
+        return $this;
+    }
+
+    public function assertCallTransferCount(int $count): void
+    {
+        PHPUnit::assertSame($count, $this->countOf(CallTransferRequest::class));
+    }
+
+    public function assertNoCallTransferred(): void
+    {
+        $this->assertCallTransferCount(0);
+    }
+
+    public function assertCallTransferred(?Closure $callback = null): void
+    {
+        $bodies = $this->bodiesOf(CallTransferRequest::class);
+
+        PHPUnit::assertTrue($bodies->isNotEmpty(), 'No call was transferred.');
+
+        if (null !== $callback) {
+            PHPUnit::assertTrue(
+                $bodies->contains(static fn(array $body) => false !== $callback($body)),
+                'No transferred call matched the given callback.',
+            );
+        }
+    }
+
+    public function assertCallTransferredTo(string $phoneNumber): void
+    {
+        $matched = $this->bodiesOf(CallTransferRequest::class)->contains(
+            fn(array $body) => self::normalizePhone((string) Arr::get($body, 'phoneNumber', '')) === self::normalizePhone($phoneNumber),
+        );
+
+        PHPUnit::assertTrue($matched, "No call was transferred to [{$phoneNumber}].");
+    }
+
+    public function assertCallTransferredWithSessionId(string $sessionId): void
+    {
+        $matched = $this->bodiesOf(CallTransferRequest::class)->contains(
+            static fn(array $body) => Arr::get($body, 'sessionId') === $sessionId,
+        );
+
+        PHPUnit::assertTrue($matched, "No call with session id [{$sessionId}] was transferred.");
+    }
+
+    public function assertCallTransferredWithLeg(string $callLeg): void
+    {
+        $matched = $this->bodiesOf(CallTransferRequest::class)->contains(
+            static fn(array $body) => Arr::get($body, 'callLeg') === $callLeg,
+        );
+
+        PHPUnit::assertTrue($matched, "No call was transferred with the [{$callLeg}] leg.");
     }
 
     // ------------------------------------------------------------------
@@ -659,6 +738,7 @@ class FakeAfricastalking
             SimSwapSendRequest::class => fn(PendingRequest $pendingRequest) => $this->simSwapResponse($pendingRequest),
             CallRequest::class => fn(PendingRequest $pendingRequest) => $this->voiceCallResponse($pendingRequest),
             QueueStatusRequest::class => fn(PendingRequest $pendingRequest) => $this->queueStatusResponse($pendingRequest),
+            CallTransferRequest::class => fn(PendingRequest $pendingRequest) => $this->callTransferResponse($pendingRequest),
             CapabilityTokenRequest::class => fn(PendingRequest $pendingRequest) => $this->capabilityTokenResponse($pendingRequest),
         ]);
     }
@@ -704,6 +784,21 @@ class FakeAfricastalking
             'errorMessage' => 'None',
             'status' => 'Success',
         ]);
+    }
+
+    private function callTransferResponse(PendingRequest $pendingRequest): MockResponse
+    {
+        $body = $pendingRequest->body()?->all() ?? [];
+        $number = (string) Arr::get($body, 'phoneNumber', '');
+
+        $failed = $this->allCallTransfersFail || $this->numberIn($number, $this->failingCallTransferNumbers);
+
+        return MockResponse::make([
+            'callTransferResponse' => [
+                'status' => $failed ? 'Failed' : 'Success',
+                'errorMessage' => $failed ? 'InvalidPhoneNumber' : 'None',
+            ],
+        ], 200);
     }
 
     private function capabilityTokenResponse(PendingRequest $pendingRequest): MockResponse
