@@ -78,7 +78,7 @@ Seeding and failure-injection methods (`fail*`, `with*`, `fakeWalletBalance`) ar
 | `fake()->withQueueStatus(array $entries)` | Seeds `queueStatus()` responses globally |
 | `fake()->withQueueStatusFor(string $phoneNumber, array $entries)` | Seeds `queueStatus()` response for a specific phone number |
 | `assertQueueStatusChecked(?string $phoneNumber = null)` | Asserts `queueStatus()` was called, optionally for a specific number |
-| `fake()->failCallTransfers()` | Makes every subsequent `transferCall()` fail |
+| `fake()->failCallTransfers()` | Makes every subsequent `transfer()`/`transferCall()` fail |
 | `fake()->failCallTransfersTo(array $phoneNumbers)` | Makes call transfers fail only for the given destination phone numbers |
 | `fake()->succeedCallTransfers()` | Reverts a prior `failCallTransfers()`/`failCallTransfersTo()`, making subsequent transfers succeed again |
 | `assertCallTransferCount(int $count)` | Asserts exactly N calls were transferred |

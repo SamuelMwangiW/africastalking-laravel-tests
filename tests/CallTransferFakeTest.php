@@ -10,7 +10,7 @@ beforeEach(fn() => Africastalking::fake());
 
 it('transfers a call with default fake responses', function (): void {
     $response = Africastalking::voice()
-        ->transferCall('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
+        ->transfer('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
         ->to('+254700111222')
         ->send();
 
@@ -22,13 +22,24 @@ it('transfers a call with default fake responses', function (): void {
     Africastalking::assertCallTransferredTo('+254700111222');
 });
 
+it('also works via the transferCall() alias', function (): void {
+    $response = Africastalking::voice()
+        ->transferCall('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
+        ->to('+254700111222')
+        ->send();
+
+    expect($response->isSuccessful())->toBeTrue();
+
+    Africastalking::fake()->assertCallTransferredTo('+254700111222');
+});
+
 it('asserts no call was transferred', function (): void {
     Africastalking::fake()->assertNoCallTransferred();
 });
 
 it('asserts a call was transferred to a specific number', function (): void {
     Africastalking::voice()
-        ->transferCall('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
+        ->transfer('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
         ->to('+254700111222')
         ->send();
 
@@ -37,7 +48,7 @@ it('asserts a call was transferred to a specific number', function (): void {
 
 it('asserts a call was transferred with a specific session id', function (): void {
     Africastalking::voice()
-        ->transferCall('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
+        ->transfer('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
         ->to('+254700111222')
         ->send();
 
@@ -46,7 +57,7 @@ it('asserts a call was transferred with a specific session id', function (): voi
 
 it('asserts a call was transferred with a specific leg', function (): void {
     Africastalking::voice()
-        ->transferCall('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
+        ->transfer('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
         ->to('+254700111222')
         ->leg(CallLeg::CALLER)
         ->send();
@@ -56,7 +67,7 @@ it('asserts a call was transferred with a specific leg', function (): void {
 
 it('asserts a transfer matched a callback', function (): void {
     Africastalking::voice()
-        ->transferCall('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
+        ->transfer('ATVId_47ef478e918923e7b2d0921ebd5b66a6')
         ->to('+254700111222')
         ->send();
 
@@ -68,8 +79,8 @@ it('asserts a transfer matched a callback', function (): void {
 it('fails a specific call transfer while succeeding others', function (): void {
     Africastalking::fake()->failCallTransfersTo(['+254700111222']);
 
-    $failed = Africastalking::voice()->transferCall('ATVId_1')->to('+254700111222')->send();
-    $succeeded = Africastalking::voice()->transferCall('ATVId_2')->to('+254700333444')->send();
+    $failed = Africastalking::voice()->transfer('ATVId_1')->to('+254700111222')->send();
+    $succeeded = Africastalking::voice()->transfer('ATVId_2')->to('+254700333444')->send();
 
     expect($failed->isSuccessful())->toBeFalse()
         ->and($succeeded->isSuccessful())->toBeTrue();
@@ -78,7 +89,7 @@ it('fails a specific call transfer while succeeding others', function (): void {
 it('fails every call transfer', function (): void {
     Africastalking::fake()->failCallTransfers();
 
-    $response = Africastalking::voice()->transferCall('ATVId_1')->to('+254700111222')->send();
+    $response = Africastalking::voice()->transfer('ATVId_1')->to('+254700111222')->send();
 
     expect($response->isSuccessful())->toBeFalse();
 });
@@ -88,7 +99,7 @@ it('reverts a prior failure with succeedCallTransfers', function (): void {
         ->failCallTransfers()
         ->succeedCallTransfers();
 
-    $response = Africastalking::voice()->transferCall('ATVId_1')->to('+254700111222')->send();
+    $response = Africastalking::voice()->transfer('ATVId_1')->to('+254700111222')->send();
 
     expect($response->isSuccessful())->toBeTrue();
 });
