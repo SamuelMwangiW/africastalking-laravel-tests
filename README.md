@@ -78,6 +78,15 @@ Seeding and failure-injection methods (`fail*`, `with*`, `fakeWalletBalance`) ar
 | `fake()->withQueueStatus(array $entries)` | Seeds `queueStatus()` responses globally |
 | `fake()->withQueueStatusFor(string $phoneNumber, array $entries)` | Seeds `queueStatus()` response for a specific phone number |
 | `assertQueueStatusChecked(?string $phoneNumber = null)` | Asserts `queueStatus()` was called, optionally for a specific number |
+| `fake()->failCallTransfers()` | Makes every subsequent `transferCall()` fail |
+| `fake()->failCallTransfersTo(array $phoneNumbers)` | Makes call transfers fail only for the given destination phone numbers |
+| `fake()->succeedCallTransfers()` | Reverts a prior `failCallTransfers()`/`failCallTransfersTo()`, making subsequent transfers succeed again |
+| `assertCallTransferCount(int $count)` | Asserts exactly N calls were transferred |
+| `assertNoCallTransferred()` | Asserts no call was transferred |
+| `assertCallTransferred(?Closure $callback = null)` | Asserts a call was transferred, optionally matching a closure over the request body |
+| `assertCallTransferredTo(string $phoneNumber)` | Asserts a call was transferred to a specific number |
+| `assertCallTransferredWithSessionId(string $sessionId)` | Asserts a transfer was made for the given call session |
+| `assertCallTransferredWithLeg(string $callLeg)` | Asserts a transfer specified the given call leg (`caller`/`callee`) |
 
 ## SMS
 

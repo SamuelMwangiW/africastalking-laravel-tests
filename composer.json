@@ -23,7 +23,7 @@
         "illuminate/support": "^13.0",
         "saloonphp/laravel-plugin": "^4.0",
         "saloonphp/saloon": "^4.0",
-        "samuelmwangiw/africastalking-laravel": "^3.0@alpha"
+        "samuelmwangiw/africastalking-laravel": "dev-main"
     },
     "require-dev": {
         "guzzlehttp/guzzle": "^7.4",
