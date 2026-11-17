@@ -22,8 +22,8 @@
         "illuminate/contracts": "^13.0",
         "illuminate/support": "^13.0",
         "saloonphp/laravel-plugin": "^4.0",
-        "saloonphp/saloon": "^4.0",
-        "samuelmwangiw/africastalking-laravel": "^3.0.0-alpha3"
+        "saloonphp/saloon": "^5.0",
+        "samuelmwangiw/africastalking-laravel": "^3.0"
     },
     "require-dev": {
         "guzzlehttp/guzzle": "^8.2",
